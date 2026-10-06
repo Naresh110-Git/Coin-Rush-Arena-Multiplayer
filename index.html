@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Coin Rush Arena — Multiplayer Game</title>
+  <meta name="description" content="A real-time zero-install multiplayer arcade arena. Collect coins, survive the 60-second rush, and dominate the leaderboard!">
+  <meta name="theme-color" content="#060713">
+
+  <meta property="og:title" content="Coin Rush Arena">
+  <meta property="og:description" content="Fast-paced 2D multiplayer coin collection arena. Outscore friends or test vs AI bots!">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts: Orbitron & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/client/styles.css">
+</head>
+<body>
+
+  <!-- Game Arena Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- In-Game HUD -->
+  <div id="game-hud" style="display: none;">
+    <div class="hud-pill">
+      <span style="color:#8892b0;font-size:0.75rem;font-weight:700;">TIME REMAINING</span>
+      <div id="hud-timer" class="timer-box">60</div>
+    </div>
+
+    <div class="hud-pill">
+      <div id="hud-leaderboard" class="hud-leaderboard">
+        <!-- Dynamically populated scores -->
+      </div>
+    </div>
+
+    <div class="hud-pill" style="display:flex;align-items:center;gap:0.75rem;">
+      <span id="hud-ping" style="color:#39ff14;font-size:0.8rem;font-weight:700;">🟢 20ms</span>
+      <button id="btn-toggle-sound" style="background:none;border:none;cursor:pointer;font-size:1.1rem;" title="Toggle Sound">🔊</button>
+    </div>
+  </div>
+
+  <!-- Big Countdown Text -->
+  <div id="countdown-display">3</div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="mobile-controls">
+    <div id="touch-zone-left"></div>
+    <div id="joystick-base">
+      <div id="joystick-knob"></div>
+    </div>
+  </div>
+
+  <!-- 1. EDITORIAL LANDING SCREEN -->
+  <div id="screen-landing" class="overlay-screen">
+    <div class="landing-container">
+      
+      <!-- Top Branding -->
+      <header class="landing-header">
+        <div class="brand-badge">⚡ HANDSHAKE X OPENAI CHALLENGE ENTRY</div>
+        <h1 class="main-title">COIN RUSH ARENA</h1>
+        <div class="main-tagline">REAL-TIME MULTIPLAYER ARCADE • 2–6 PLAYERS</div>
+      </header>
+
+      <!-- Main Two-Column Layout -->
+      <div class="landing-grid">
+        
+        <!-- Left: Crew Access Panel -->
+        <div class="glass-panel">
+          <div class="panel-tag">MATCH ACCESS</div>
+          <h2 class="panel-heading">COLLECT. OUTSCORE. SURVIVE THE RUSH.</h2>
+          <p class="panel-subtext">
+            Outmaneuver friends in a 60-second shared arcade arena. Zero logins. Zero app installs. Replayable any night from any phone or laptop.
+          </p>
+
+          <div class="input-group">
+            <label class="input-label" for="input-nickname">Your Nickname</label>
+            <input type="text" id="input-nickname" class="neon-input" placeholder="e.g. Captain Blitz" maxlength="15" spellcheck="false" autocomplete="nickname">
+          </div>
+
+          <div class="action-buttons-group">
+            <button id="btn-create-room" class="btn-primary">CREATE A ROOM</button>
+            <button id="btn-solo-bots" class="btn-solo-bots">🤖 PLAY SOLO PRACTICE (VS AI BOTS)</button>
+          </div>
+
+          <div class="divider"><span>OR JOIN WITH CODE</span></div>
+
+          <div class="join-code-row">
+            <input type="text" id="input-room-code" class="neon-input code-input" placeholder="CODE" maxlength="4" spellcheck="false" autocomplete="off">
+            <button id="btn-join-room" class="btn-secondary">JOIN</button>
+          </div>
+
+          <div style="margin-top:1.2rem;font-size:0.8rem;color:#8892b0;line-height:1.4;">
+            Separate devices. Same table. No account needed. <b>Refreshing automatically reconnects you.</b>
+          </div>
+        </div>
+
+        <!-- Right: The Rules (Editorial Guide) -->
+        <div class="glass-panel">
+          <div class="panel-tag">OPERATIONAL BRIEFING</div>
+          <h2 class="panel-heading">Rules of the Arena</h2>
+
+          <div class="rule-card">
+            <div class="rule-num">1</div>
+            <div>
+              <div class="rule-title">Rush & Collect</div>
+              <div class="rule-desc">Maneuver your ship across the 800×500 grid. Normal Coins award <b>+1 point</b>. Golden Stars award <b>+3 points</b>.</div>
+            </div>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">2</div>
+            <div>
+              <div class="rule-title">Survive Rush Hour</div>
+              <div class="rule-desc">When the authoritative server timer reaches the final 15 seconds, <b>Rush Hour frenzy</b> activates with doubled golden coin spawn rates!</div>
+            </div>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">3</div>
+            <div>
+              <div class="rule-title">First-to-Score Tie Breaker</div>
+              <div class="rule-desc">If players finish with identical scores, the player who reached that tied score earliest wins the match!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Directory of Open Rooms (Panic Protocol Pattern) -->
+      <div class="glass-panel directory-panel">
+        <div class="directory-header">
+          <div class="directory-title">🌐 LIVE OPEN ROOMS DIRECTORY</div>
+          <div class="auto-badge">● AUTO-REFRESHING</div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="rooms-table">
+            <thead>
+              <tr>
+                <th>Room Code</th>
+                <th>Host</th>
+                <th>Players</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="rooms-table-body">
+              <tr>
+                <td colspan="5" style="text-align:center;color:#8892b0;padding:1.5rem;">No public rooms active right now. Create one above!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. LOBBY SCREEN -->
+  <div id="screen-lobby" class="overlay-screen" style="display: none;">
+    <div class="glass-panel lobby-box">
+      <div class="panel-tag">MATCH LOBBY</div>
+      <h2 class="panel-heading">Share Code or Scan to Join</h2>
+
+      <div id="lobby-room-code" class="room-code-tag" title="Click to copy code">----</div>
+      <div style="font-size:0.8rem;color:#8892b0;">(Click code to copy invite link)</div>
+
+      <canvas id="lobby-qr-canvas" class="qr-canvas"></canvas>
+
+      <div class="player-chips-list" id="lobby-players-list">
+        <!-- Dynamically rendered player chips -->
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;">
+        <button id="btn-start-match" class="btn-primary" style="display:none;">START MATCH (3s COUNTDOWN)</button>
+        <button id="btn-add-bot" class="btn-solo-bots" style="display:none;">🤖 ADD AI BOT</button>
+        <button id="btn-leave-lobby" class="btn-secondary">LEAVE LOBBY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. GAME OVER SCREEN -->
+  <div id="screen-gameover" class="overlay-screen" style="display: none;">
+    <div class="glass-panel gameover-box">
+      <div class="panel-tag">MATCH COMPLETE</div>
+      <h2 id="gameover-winner-title" class="panel-heading">VICTORY</h2>
+      <p id="gameover-tiebreak-note" style="color:#ffd700;font-size:0.85rem;margin-bottom:1.5rem;display:none;">
+        ⚡ Tie-breaker resolved by earliest score achievement!
+      </p>
+
+      <div id="gameover-leaderboard" style="margin-bottom:2rem;">
+        <!-- Dynamically rendered final leaderboard -->
+      </div>
+
+      <div style="display:flex;gap:1rem;justify-content:center;">
+        <button id="btn-rematch" class="btn-primary" style="display:none;width:auto;padding:0.9rem 2rem;">REMATCH</button>
+        <button id="btn-back-lobby" class="btn-secondary" style="width:auto;padding:0.9rem 2rem;">BACK TO LOBBY</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/client/main.ts"></script>
+</body>
+</html>
